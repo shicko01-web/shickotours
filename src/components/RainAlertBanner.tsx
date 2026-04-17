@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { CloudRain, AlertTriangle } from 'lucide-react';
 
 interface RainAlertBannerProps {
@@ -6,11 +7,15 @@ interface RainAlertBannerProps {
   rainMm?: number;
 }
 
-export function RainAlertBanner({ manual, rainProbability, rainMm }: RainAlertBannerProps) {
+export const RainAlertBanner = forwardRef<HTMLDivElement, RainAlertBannerProps>(function RainAlertBanner(
+  { manual, rainProbability, rainMm },
+  ref
+) {
   const pct = rainProbability != null ? Math.round(rainProbability * 100) : null;
 
   return (
     <div
+      ref={ref}
       role="alert"
       className="animate-fade-in flex items-start gap-3 rounded-2xl bg-rain p-4 text-rain-foreground shadow-card"
     >
