@@ -1,3 +1,4 @@
+/// <reference types="google.maps" />
 import { useEffect, useRef, useState } from 'react';
 import { MapPin, AlertCircle } from 'lucide-react';
 import type { Stop } from '@/types/trip';
@@ -5,7 +6,6 @@ import { loadGoogleMaps, hasGoogleMapsKey } from '@/lib/googleMaps';
 
 interface TripMapProps {
   stops: Stop[];
-  /** When true, also draws Plan B stops with a different color */
   planBStops?: Stop[];
   highlightPlanB?: boolean;
   onMapReady?: (map: google.maps.Map) => void;
@@ -41,19 +41,18 @@ export function TripMap({ stops, planBStops = [], highlightPlanB = false, onMapR
           onMapReady?.(mapRef.current);
         }
       })
-      .catch((e) => setError(e.message ?? 'load-failed'));
+      .catch((e) => setError(e?.message ?? 'load-failed'));
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Render markers + route whenever stops change
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !window.google) return;
+    const g = (window as unknown as { google?: typeof globalThis.google }).google;
+    if (!map || !g) return;
 
-    const g = window.google;
     const markers: google.maps.Marker[] = [];
     const bounds = new g.maps.LatLngBounds();
 
