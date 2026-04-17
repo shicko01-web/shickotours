@@ -37,4 +37,4 @@ export const RainAlertBanner = forwardRef<HTMLDivElement, RainAlertBannerProps>(
       </div>
     </div>
   );
-}
+});
