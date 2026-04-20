@@ -194,7 +194,12 @@ function ShickoToursApp() {
         )}
 
         {/* Nearby attractions */}
-        <NearbyAttractions center={anchorCoords} indoorBias={rainActive} />
+        <NearbyAttractions
+          center={anchorCoords}
+          indoorBias={rainActive}
+          trip={trip}
+          weather={weather}
+        />
 
         <footer className="pb-6 pt-4 text-center text-xs text-muted-foreground">
           shickotours · נוצר באהבה לטיולים בארץ 🧭
