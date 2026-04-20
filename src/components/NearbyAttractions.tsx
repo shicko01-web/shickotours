@@ -222,7 +222,7 @@ export function NearbyAttractions({
                 {/* Meta row */}
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
                   {p.rating && (
-                    <span className="flex items-center gap-0.5 text-amber-600">
+                    <span className="flex items-center gap-0.5 text-accent">
                       <Star className="h-3 w-3 fill-current" />
                       {p.rating.toFixed(1)}
                       {p.userRatingCount ? (
@@ -233,7 +233,7 @@ export function NearbyAttractions({
                   {status && (
                     <span
                       className={`flex items-center gap-0.5 font-medium ${
-                        p.openNow ? 'text-emerald-600' : 'text-muted-foreground'
+                        p.openNow ? 'text-primary' : 'text-muted-foreground'
                       }`}
                     >
                       <Clock className="h-3 w-3" />
