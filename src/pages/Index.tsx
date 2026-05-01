@@ -25,6 +25,7 @@ function formatDateRange(start: string, end: string) {
 }
 
 function ShickoToursApp() {
+  const navigate = useNavigate();
   const { trip, resetTrip } = useTrip();
   const { data: weather, loading: weatherLoading, error: weatherError } = useWeather(trip.weatherCity);
   const { rainActive, manualOverride, setManualOverride, setAutoTrigger } = useRainMode();
