@@ -18,6 +18,15 @@ export interface PlanBStop extends Stop {
   isIndoor: boolean;
 }
 
+export interface TripPlanParams {
+  region: string;
+  styles: string[];
+  group: string;
+  pace: number;
+  startDate: string;
+  endDate: string;
+}
+
 export interface Trip {
   id: string;
   name: string;
@@ -25,6 +34,14 @@ export interface Trip {
   endDate: string; // ISO
   /** Region/anchor used for the weather query */
   weatherCity: string;
+  /** Region key (galilee, jerusalem, …) — present for AI-generated trips */
+  region?: string;
+  /** AI-generated overview paragraph */
+  overview?: string;
+  /** Short bullet highlights (history, scenery, seasonal flora, …) */
+  highlights?: string[];
+  /** Original planning parameters — used to allow regeneration */
+  planParams?: TripPlanParams;
   stops: Stop[];
   planB: PlanBStop[];
 }

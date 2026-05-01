@@ -66,17 +66,23 @@ const fmt = (d?: Date) => (d ? format(d, "dd/MM/yyyy", { locale: he }) : "");
 
 export default function PlanTrip() {
   const navigate = useNavigate();
-  const { setTrip } = useTrip();
+  const { trip, setTrip } = useTrip();
 
   const tomorrow = new Date(Date.now() + 86400000);
   const inThreeDays = new Date(Date.now() + 3 * 86400000);
 
-  const [region, setRegion] = useState("galilee");
-  const [startDate, setStartDate] = useState<Date | undefined>(tomorrow);
-  const [endDate, setEndDate] = useState<Date | undefined>(inThreeDays);
-  const [styles, setStyles] = useState<string[]>(["nature", "views"]);
-  const [group, setGroup] = useState("family");
-  const [pace, setPace] = useState(3);
+  // If we came from /trip via "צור מחדש", prefill with last params
+  const prev = trip.planParams;
+  const [region, setRegion] = useState(prev?.region ?? "galilee");
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    prev?.startDate ? new Date(prev.startDate) : tomorrow,
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    prev?.endDate ? new Date(prev.endDate) : inThreeDays,
+  );
+  const [styles, setStyles] = useState<string[]>(prev?.styles ?? ["nature", "views"]);
+  const [group, setGroup] = useState(prev?.group ?? "family");
+  const [pace, setPace] = useState(prev?.pace ?? 3);
   const [loading, setLoading] = useState(false);
 
   const toggleStyle = (val: string) => {
