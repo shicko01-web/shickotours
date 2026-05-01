@@ -204,7 +204,7 @@ export default function PlanTrip() {
                   <Calendar
                     mode="single"
                     selected={startDate}
-                    onSelect={setStartDate}
+                    onSelect={(d) => d && setStartDate(d)}
                     initialFocus
                     locale={he}
                     className="pointer-events-auto p-3"
@@ -232,7 +232,7 @@ export default function PlanTrip() {
                   <Calendar
                     mode="single"
                     selected={endDate}
-                    onSelect={setEndDate}
+                    onSelect={(d) => d && setEndDate(d)}
                     initialFocus
                     locale={he}
                     disabled={(d) => (startDate ? d < startDate : false)}
