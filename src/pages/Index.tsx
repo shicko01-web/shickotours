@@ -116,6 +116,29 @@ function ShickoToursApp() {
           />
         </section>
 
+        {/* Trip overview (AI-generated) */}
+        {(trip.overview || (trip.highlights && trip.highlights.length > 0)) && (
+          <section className="rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/5 to-primary/5 p-4 shadow-soft">
+            <header className="mb-2 flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-accent" />
+              <h2 className="text-sm font-bold">על המסלול</h2>
+            </header>
+            {trip.overview && (
+              <p className="text-sm leading-relaxed text-foreground/85">{trip.overview}</p>
+            )}
+            {trip.highlights && trip.highlights.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {trip.highlights.map((h, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-foreground/80">
+                    <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span>{h}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+
         {/* Action row */}
         <div className="flex flex-wrap gap-2">
           <Button
@@ -125,6 +148,15 @@ function ShickoToursApp() {
           >
             <Download className="h-4 w-4" />
             {exporting ? 'מכין PDF…' : 'הורד מדריך טיול'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/plan')}
+            className="gap-1.5 border-accent/40 text-accent hover:bg-accent/10"
+            aria-label="צור מסלול חדש"
+          >
+            <Sparkles className="h-4 w-4" />
+            צור מחדש
           </Button>
           <Button
             variant="outline"
