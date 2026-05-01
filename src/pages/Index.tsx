@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { CloudRain, Sun, Download, Calendar, Compass, RotateCcw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CloudRain, Sun, Download, Calendar, Compass, RotateCcw, Sparkles, BookOpen } from 'lucide-react';
 import { useTrip } from '@/hooks/useTrip';
 import { useWeather } from '@/hooks/useWeather';
 import { useRainMode, RainModeProvider } from '@/contexts/RainModeContext';
