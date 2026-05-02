@@ -4,6 +4,15 @@ import { SEED_TRIP } from '@/data/seedTrip';
 
 const STORAGE_KEY = 'shickotours.trip.v1';
 
+function persistTrip(next: Trip) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    /* quota — ignore */
+  }
+}
+
 export function useTrip() {
   const [trip, setTripState] = useState<Trip>(() => {
     if (typeof window === 'undefined') return SEED_TRIP;
@@ -24,12 +33,22 @@ export function useTrip() {
     }
   }, [trip]);
 
-  const setTrip = useCallback((next: Trip) => setTripState(next), []);
+  const setTrip = useCallback((next: Trip) => {
+    persistTrip(next);
+    setTripState(next);
+  }, []);
 
-  const resetTrip = useCallback(() => setTripState(SEED_TRIP), []);
+  const resetTrip = useCallback(() => {
+    persistTrip(SEED_TRIP);
+    setTripState(SEED_TRIP);
+  }, []);
 
   const updateTripField = useCallback(<K extends keyof Trip>(key: K, value: Trip[K]) => {
-    setTripState((t) => ({ ...t, [key]: value }));
+    setTripState((t) => {
+      const next = { ...t, [key]: value };
+      persistTrip(next);
+      return next;
+    });
   }, []);
 
   return { trip, setTrip, resetTrip, updateTripField };
