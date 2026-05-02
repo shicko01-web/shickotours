@@ -79,7 +79,7 @@ const REGION_HINTS: Record<string, RegionHint> = {
     bbox: "Negev desert, Israel",
     center: { lat: 30.61, lng: 34.80 },
     bounds: [29.55, 31.25, 34.30, 35.30],
-    examples: ["מצפה רמון", "מכתש רמון", "עין עבדת", "שדה בוקר", "מצדה"],
+    examples: ["מצפה רמון", "מכתש רמון", "עין עבדת", "שדה בוקר", "פארק ירוחם", "נחל חווארים"],
   },
   coast: {
     weatherCity: "Tel Aviv,IL",
@@ -129,6 +129,25 @@ function inBounds(
 ): boolean {
   if (typeof lat !== "number" || typeof lng !== "number") return false;
   return lat >= b[0] && lat <= b[1] && lng >= b[2] && lng <= b[3];
+}
+
+function fallbackRegionalStop(hint: RegionHint, index: number, isPlanB = false) {
+  const name = hint.examples[index % Math.max(1, hint.examples.length)] || hint.bbox;
+  const lat = Math.min(hint.bounds[1], Math.max(hint.bounds[0], hint.center.lat + (index - 1) * 0.025));
+  const lng = Math.min(hint.bounds[3], Math.max(hint.bounds[2], hint.center.lng + (index % 3 - 1) * 0.025));
+  return {
+    name,
+    description: isPlanB
+      ? `חלופה רגועה ומוגנת באזור ${name}, מתאימה לשינויי מזג אוויר.`
+      : `עצירה מרכזית באזור ${name}, מותאמת למסלול המבוקש.` ,
+    details: `התחנה נבחרה כחלופה בטוחה בתוך גבולות האזור שבחרתם. היא שומרת את המסלול סביב ${hint.bbox}, מאפשרת ליהנות מהאופי המקומי של האזור, ומונעת גלישה לאזורים רחוקים שאינם חלק מהבקשה המקורית.`,
+    tips: ["בדקו שעות פתיחה לפני ההגעה", "השאירו זמן קצר לתצפית או מנוחה", "התאימו נעליים ומים לעונה"],
+    coords: { lat, lng },
+    durationMin: isPlanB ? 90 : 75,
+    category: isPlanB ? "culture" : "nature",
+    reason: "נבחר כגיבוי אזורי בטוח במקרה שההצעה המקורית חרגה מהאזור.",
+    isIndoor: isPlanB,
+  };
 }
 
 async function geocode(
