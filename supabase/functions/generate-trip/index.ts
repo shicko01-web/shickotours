@@ -339,6 +339,7 @@ Deno.serve(async (req) => {
     // 2) Resolve coordinates: try Geocoding (region-biased), then AI's approx, then region center
     const enrichStop = async (s: AIStop) => {
       let coords: { lat: number; lng: number } | null = null;
+      let regionalFallback = false;
 
       if (GMAPS_KEY) {
         const geo = await geocode(s.name, GMAPS_KEY, hint.bounds);
@@ -353,13 +354,15 @@ Deno.serve(async (req) => {
       if (!coords) {
         console.warn("falling back to region center for stop:", s.name);
         coords = hint.center;
+        regionalFallback = true;
       }
-      return { coords };
+      return { coords, regionalFallback };
     };
 
     const stops = await Promise.all(
       plan.stops.map(async (s, i) => {
-        const { coords } = await enrichStop(s);
+        const { coords, regionalFallback } = await enrichStop(s);
+        if (regionalFallback) return fallbackRegionalStop(hint, i, false);
         return {
           id: `s${i + 1}`,
           name: s.name,
@@ -375,7 +378,8 @@ Deno.serve(async (req) => {
 
     const planB = await Promise.all(
       plan.planB.map(async (s, i) => {
-        const { coords } = await enrichStop(s);
+        const { coords, regionalFallback } = await enrichStop(s);
+        if (regionalFallback) return { id: `b${i + 1}`, ...fallbackRegionalStop(hint, i, true) };
         return {
           id: `b${i + 1}`,
           name: s.name,
