@@ -139,7 +139,7 @@ function fallbackRegionalStop(hint: RegionHint, index: number, isPlanB = false) 
     name,
     description: isPlanB
       ? `חלופה רגועה ומוגנת באזור ${name}, מתאימה לשינויי מזג אוויר.`
-      : `עצירה מרכזית באזור ${name}, מותאמת למסלול המבוקש.` ,
+      : `עצירה מרכזית באזור ${name}, מותאמת למסלול המבוקש.`,
     details: `התחנה נבחרה כחלופה בטוחה בתוך גבולות האזור שבחרתם. היא שומרת את המסלול סביב ${hint.bbox}, מאפשרת ליהנות מהאופי המקומי של האזור, ומונעת גלישה לאזורים רחוקים שאינם חלק מהבקשה המקורית.`,
     tips: ["בדקו שעות פתיחה לפני ההגעה", "השאירו זמן קצר לתצפית או מנוחה", "התאימו נעליים ומים לעונה"],
     coords: { lat, lng },
@@ -362,7 +362,7 @@ Deno.serve(async (req) => {
     const stops = await Promise.all(
       plan.stops.map(async (s, i) => {
         const { coords, regionalFallback } = await enrichStop(s);
-        if (regionalFallback) return fallbackRegionalStop(hint, i, false);
+        if (regionalFallback) return { id: `s${i + 1}`, ...fallbackRegionalStop(hint, i, false) };
         return {
           id: `s${i + 1}`,
           name: s.name,
