@@ -1,4 +1,5 @@
-import { Clock, Navigation, MapPin, Tag } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, Clock, Navigation, MapPin, Tag } from 'lucide-react';
 import type { PlanBStop, Stop } from '@/types/trip';
 import { Button } from '@/components/ui/button';
 
@@ -19,6 +20,7 @@ const categoryLabel: Record<string, string> = {
 export function StopCard({ stop, index, variant = 'primary' }: StopCardProps) {
   const isPlanB = variant === 'planB';
   const planBStop = isPlanB ? (stop as PlanBStop) : null;
+  const [expanded, setExpanded] = useState(false);
 
   const wazeUrl = `https://waze.com/ul?ll=${stop.coords.lat},${stop.coords.lng}&navigate=yes`;
   const gmapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${stop.coords.lat},${stop.coords.lng}`;
@@ -48,6 +50,35 @@ export function StopCard({ stop, index, variant = 'primary' }: StopCardProps) {
             )}
           </div>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{stop.description}</p>
+
+          {(stop.details || (stop.tips && stop.tips.length > 0)) && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setExpanded((open) => !open)}
+                className="flex w-full items-center justify-between rounded-lg bg-secondary/60 px-3 py-2 text-right text-xs font-bold text-secondary-foreground transition-smooth hover:bg-secondary"
+                aria-expanded={expanded}
+              >
+                <span>{expanded ? 'סגור סקירה' : 'לסקירה ודגשים'}</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              </button>
+              {expanded && (
+                <div className="mt-2 rounded-lg border border-border bg-background p-3 text-sm leading-relaxed text-foreground/85">
+                  {stop.details && <p>{stop.details}</p>}
+                  {stop.tips && stop.tips.length > 0 && (
+                    <ul className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                      {stop.tips.map((tip, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {planBStop?.reason && (
             <div className="mt-2 rounded-lg bg-rain/10 px-2.5 py-1.5 text-[11px] text-rain">

@@ -7,6 +7,10 @@ export interface Stop {
   id: string;
   name: string;
   description: string;
+  /** Expanded review shown when the user opens a stop */
+  details?: string;
+  /** Practical or thematic bullets for this stop */
+  tips?: string[];
   coords: Coordinates;
   durationMin?: number;
   category?: 'nature' | 'food' | 'culture' | 'view' | 'activity';

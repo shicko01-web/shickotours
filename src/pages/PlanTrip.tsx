@@ -64,6 +64,8 @@ const GROUPS = [
 const toISO = (d: Date) => d.toISOString().slice(0, 10);
 const fmt = (d?: Date) => (d ? format(d, "dd/MM/yyyy", { locale: he }) : "");
 
+const REGION_LABELS = Object.fromEntries(REGIONS.map((r) => [r.value, r.label]));
+
 export default function PlanTrip() {
   const navigate = useNavigate();
   const { trip, setTrip } = useTrip();
@@ -115,6 +117,9 @@ export default function PlanTrip() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (!data?.trip) throw new Error("לא התקבל מסלול תקין");
+      if (data.trip.region !== region) {
+        throw new Error(`המערכת החזירה אזור שגוי במקום ${REGION_LABELS[region] ?? region}`);
+      }
 
       setTrip(data.trip);
       toast.success("המסלול נוצר! 🎉");

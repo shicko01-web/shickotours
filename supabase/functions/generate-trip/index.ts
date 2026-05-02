@@ -19,6 +19,8 @@ interface PlanInput {
 interface AIStop {
   name: string;
   description: string;
+  details?: string;
+  tips?: string[];
   durationMin?: number;
   category?: string;
   approxLat?: number;
@@ -77,7 +79,7 @@ const REGION_HINTS: Record<string, RegionHint> = {
     bbox: "Negev desert, Israel",
     center: { lat: 30.61, lng: 34.80 },
     bounds: [29.55, 31.25, 34.30, 35.30],
-    examples: ["מצפה רמון", "מכתש רמון", "עין עבדת", "שדה בוקר", "מצדה"],
+    examples: ["מצפה רמון", "מכתש רמון", "עין עבדת", "שדה בוקר", "פארק ירוחם", "נחל חווארים"],
   },
   coast: {
     weatherCity: "Tel Aviv,IL",
@@ -127,6 +129,25 @@ function inBounds(
 ): boolean {
   if (typeof lat !== "number" || typeof lng !== "number") return false;
   return lat >= b[0] && lat <= b[1] && lng >= b[2] && lng <= b[3];
+}
+
+function fallbackRegionalStop(hint: RegionHint, index: number, isPlanB = false) {
+  const name = hint.examples[index % Math.max(1, hint.examples.length)] || hint.bbox;
+  const lat = Math.min(hint.bounds[1], Math.max(hint.bounds[0], hint.center.lat + (index - 1) * 0.025));
+  const lng = Math.min(hint.bounds[3], Math.max(hint.bounds[2], hint.center.lng + (index % 3 - 1) * 0.025));
+  return {
+    name,
+    description: isPlanB
+      ? `חלופה רגועה ומוגנת באזור ${name}, מתאימה לשינויי מזג אוויר.`
+      : `עצירה מרכזית באזור ${name}, מותאמת למסלול המבוקש.`,
+    details: `התחנה נבחרה כחלופה בטוחה בתוך גבולות האזור שבחרתם. היא שומרת את המסלול סביב ${hint.bbox}, מאפשרת ליהנות מהאופי המקומי של האזור, ומונעת גלישה לאזורים רחוקים שאינם חלק מהבקשה המקורית.`,
+    tips: ["בדקו שעות פתיחה לפני ההגעה", "השאירו זמן קצר לתצפית או מנוחה", "התאימו נעליים ומים לעונה"],
+    coords: { lat, lng },
+    durationMin: isPlanB ? 90 : 75,
+    category: isPlanB ? "culture" : "nature",
+    reason: "נבחר כגיבוי אזורי בטוח במקרה שההצעה המקורית חרגה מהאזור.",
+    isIndoor: isPlanB,
+  };
 }
 
 async function geocode(
@@ -208,7 +229,7 @@ Deno.serve(async (req) => {
 3) ${stopsCount} תחנות עיקריות (stops) באזור בלבד.
 4) 4 תחנות מקורות לתוכנית גשם (planB) באותו אזור.
 
-לכל תחנה: שם מדויק, תיאור (עד 25 מילים), משך בדקות, קואורדינטות אמיתיות (lat/lng) של מקום אמיתי בתוך הגבולות שצוינו. אסור להמציא קואורדינטות שמחוץ לגבולות.
+לכל תחנה: שם מדויק, תיאור (עד 25 מילים), details — סקירה מורחבת של 45-70 מילים על מה רואים במקום, רקע היסטורי/טבעי/נופי לפי סוג הטיול, tips — 2-4 דגשים קצרים לביקור, משך בדקות, קואורדינטות אמיתיות (lat/lng) של מקום אמיתי בתוך הגבולות שצוינו. אסור להמציא קואורדינטות שמחוץ לגבולות.
 ל-planB גם 'reason' למה זה טוב לגשם ו-'isIndoor': true.
 קטגוריות: nature, food, culture, view, activity.`;
 
@@ -249,6 +270,8 @@ Deno.serve(async (req) => {
                       properties: {
                         name: { type: "string" },
                         description: { type: "string" },
+                        details: { type: "string" },
+                        tips: { type: "array", items: { type: "string" } },
                         durationMin: { type: "number" },
                         category: {
                           type: "string",
@@ -257,7 +280,7 @@ Deno.serve(async (req) => {
                         approxLat: { type: "number" },
                         approxLng: { type: "number" },
                       },
-                      required: ["name", "description", "category", "approxLat", "approxLng"],
+                      required: ["name", "description", "details", "tips", "category", "approxLat", "approxLng"],
                     },
                   },
                   planB: {
@@ -267,6 +290,8 @@ Deno.serve(async (req) => {
                       properties: {
                         name: { type: "string" },
                         description: { type: "string" },
+                        details: { type: "string" },
+                        tips: { type: "array", items: { type: "string" } },
                         durationMin: { type: "number" },
                         category: {
                           type: "string",
@@ -277,7 +302,7 @@ Deno.serve(async (req) => {
                         reason: { type: "string" },
                         isIndoor: { type: "boolean" },
                       },
-                      required: ["name", "description", "reason", "isIndoor", "approxLat", "approxLng"],
+                      required: ["name", "description", "details", "tips", "reason", "isIndoor", "approxLat", "approxLng"],
                     },
                   },
                 },
@@ -314,6 +339,7 @@ Deno.serve(async (req) => {
     // 2) Resolve coordinates: try Geocoding (region-biased), then AI's approx, then region center
     const enrichStop = async (s: AIStop) => {
       let coords: { lat: number; lng: number } | null = null;
+      let regionalFallback = false;
 
       if (GMAPS_KEY) {
         const geo = await geocode(s.name, GMAPS_KEY, hint.bounds);
@@ -328,17 +354,21 @@ Deno.serve(async (req) => {
       if (!coords) {
         console.warn("falling back to region center for stop:", s.name);
         coords = hint.center;
+        regionalFallback = true;
       }
-      return { coords };
+      return { coords, regionalFallback };
     };
 
     const stops = await Promise.all(
       plan.stops.map(async (s, i) => {
-        const { coords } = await enrichStop(s);
+        const { coords, regionalFallback } = await enrichStop(s);
+        if (regionalFallback) return { id: `s${i + 1}`, ...fallbackRegionalStop(hint, i, false) };
         return {
           id: `s${i + 1}`,
           name: s.name,
           description: s.description,
+          details: s.details,
+          tips: Array.isArray(s.tips) ? s.tips : [],
           coords,
           durationMin: s.durationMin ?? 60,
           category: (s.category as Stop["category"]) ?? "activity",
@@ -348,11 +378,14 @@ Deno.serve(async (req) => {
 
     const planB = await Promise.all(
       plan.planB.map(async (s, i) => {
-        const { coords } = await enrichStop(s);
+        const { coords, regionalFallback } = await enrichStop(s);
+        if (regionalFallback) return { id: `b${i + 1}`, ...fallbackRegionalStop(hint, i, true) };
         return {
           id: `b${i + 1}`,
           name: s.name,
           description: s.description,
+          details: s.details,
+          tips: Array.isArray(s.tips) ? s.tips : [],
           coords,
           durationMin: s.durationMin ?? 90,
           category: (s.category as Stop["category"]) ?? "culture",
