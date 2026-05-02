@@ -19,6 +19,8 @@ interface PlanInput {
 interface AIStop {
   name: string;
   description: string;
+  details?: string;
+  tips?: string[];
   durationMin?: number;
   category?: string;
   approxLat?: number;
@@ -208,7 +210,7 @@ Deno.serve(async (req) => {
 3) ${stopsCount} תחנות עיקריות (stops) באזור בלבד.
 4) 4 תחנות מקורות לתוכנית גשם (planB) באותו אזור.
 
-לכל תחנה: שם מדויק, תיאור (עד 25 מילים), משך בדקות, קואורדינטות אמיתיות (lat/lng) של מקום אמיתי בתוך הגבולות שצוינו. אסור להמציא קואורדינטות שמחוץ לגבולות.
+לכל תחנה: שם מדויק, תיאור (עד 25 מילים), details — סקירה מורחבת של 45-70 מילים על מה רואים במקום, רקע היסטורי/טבעי/נופי לפי סוג הטיול, tips — 2-4 דגשים קצרים לביקור, משך בדקות, קואורדינטות אמיתיות (lat/lng) של מקום אמיתי בתוך הגבולות שצוינו. אסור להמציא קואורדינטות שמחוץ לגבולות.
 ל-planB גם 'reason' למה זה טוב לגשם ו-'isIndoor': true.
 קטגוריות: nature, food, culture, view, activity.`;
 
