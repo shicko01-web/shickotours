@@ -251,6 +251,8 @@ Deno.serve(async (req) => {
                       properties: {
                         name: { type: "string" },
                         description: { type: "string" },
+                        details: { type: "string" },
+                        tips: { type: "array", items: { type: "string" } },
                         durationMin: { type: "number" },
                         category: {
                           type: "string",
@@ -259,7 +261,7 @@ Deno.serve(async (req) => {
                         approxLat: { type: "number" },
                         approxLng: { type: "number" },
                       },
-                      required: ["name", "description", "category", "approxLat", "approxLng"],
+                      required: ["name", "description", "details", "tips", "category", "approxLat", "approxLng"],
                     },
                   },
                   planB: {
@@ -269,6 +271,8 @@ Deno.serve(async (req) => {
                       properties: {
                         name: { type: "string" },
                         description: { type: "string" },
+                        details: { type: "string" },
+                        tips: { type: "array", items: { type: "string" } },
                         durationMin: { type: "number" },
                         category: {
                           type: "string",
@@ -279,7 +283,7 @@ Deno.serve(async (req) => {
                         reason: { type: "string" },
                         isIndoor: { type: "boolean" },
                       },
-                      required: ["name", "description", "reason", "isIndoor", "approxLat", "approxLng"],
+                      required: ["name", "description", "details", "tips", "reason", "isIndoor", "approxLat", "approxLng"],
                     },
                   },
                 },
