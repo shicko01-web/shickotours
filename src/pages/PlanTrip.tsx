@@ -3,24 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
-  CalendarIcon,
   Compass,
   Loader2,
   Sparkles,
 } from "lucide-react";
-import { format } from "date-fns";
-import { he } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -32,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTrip } from "@/hooks/useTrip";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import type { CandidateBundle } from "@/types/trip";
 
 const REGIONS = [
   { value: "galilee", label: "גליל" },
@@ -61,30 +52,16 @@ const GROUPS = [
   { value: "solo", label: "יחיד/ה" },
 ];
 
-const toISO = (d: Date) => d.toISOString().slice(0, 10);
-const fmt = (d?: Date) => (d ? format(d, "dd/MM/yyyy", { locale: he }) : "");
-
 const REGION_LABELS = Object.fromEntries(REGIONS.map((r) => [r.value, r.label]));
 
 export default function PlanTrip() {
   const navigate = useNavigate();
-  const { trip, setTrip } = useTrip();
+  const { trip } = useTrip();
 
-  const tomorrow = new Date(Date.now() + 86400000);
-  const inThreeDays = new Date(Date.now() + 3 * 86400000);
-
-  // If we came from /trip via "צור מחדש", prefill with last params
   const prev = trip.planParams;
   const [region, setRegion] = useState(prev?.region ?? "galilee");
-  const [startDate, setStartDate] = useState<Date | undefined>(
-    prev?.startDate ? new Date(prev.startDate) : tomorrow,
-  );
-  const [endDate, setEndDate] = useState<Date | undefined>(
-    prev?.endDate ? new Date(prev.endDate) : inThreeDays,
-  );
   const [styles, setStyles] = useState<string[]>(prev?.styles ?? ["nature", "views"]);
   const [group, setGroup] = useState(prev?.group ?? "family");
-  const [pace, setPace] = useState(prev?.pace ?? 3);
   const [loading, setLoading] = useState(false);
 
   const toggleStyle = (val: string) => {
@@ -94,40 +71,25 @@ export default function PlanTrip() {
   };
 
   const submit = async () => {
-    if (!startDate || !endDate) {
-      toast.error("יש לבחור תאריכי התחלה וסיום");
-      return;
-    }
-    if (endDate < startDate) {
-      toast.error("תאריך סיום חייב להיות אחרי תאריך התחלה");
-      return;
-    }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-trip", {
-        body: {
-          region,
-          startDate: toISO(startDate),
-          endDate: toISO(endDate),
-          styles,
-          group,
-          pace,
-        },
+        body: { region, styles, group },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (!data?.trip) throw new Error("לא התקבל מסלול תקין");
-      if (data.trip.region !== region) {
+      const bundle = data as CandidateBundle | undefined;
+      if (!bundle?.candidates?.length) throw new Error("לא התקבלו אופציות");
+      if (bundle.region !== region) {
         throw new Error(`המערכת החזירה אזור שגוי במקום ${REGION_LABELS[region] ?? region}`);
       }
 
-      setTrip(data.trip);
-      toast.success("המסלול נוצר! 🎉");
-      navigate("/trip");
+      sessionStorage.setItem("shickotours.candidates.v1", JSON.stringify(bundle));
+      navigate("/options");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "שגיאה לא צפויה";
       console.error(e);
-      toast.error(`יצירת מסלול נכשלה: ${msg}`);
+      toast.error(`יצירת אופציות נכשלה: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -135,7 +97,6 @@ export default function PlanTrip() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero with gradient — matches Landing */}
       <header className="relative overflow-hidden text-white shadow-card">
         <div className="absolute inset-0 -z-10 gradient-hero" />
         <div className="pointer-events-none absolute -top-12 -right-12 -z-10 h-56 w-56 rounded-full bg-accent/40 blur-3xl" />
@@ -163,13 +124,13 @@ export default function PlanTrip() {
               className="text-2xl font-extrabold leading-tight md:text-4xl"
               style={{ textShadow: "0 4px 20px rgba(0,0,0,0.2)" }}
             >
-              ספרו לנו על הטיול הבא שלכם
+              לאן בא לכם היום?
             </h1>
             <p
               className="mt-2 text-sm text-white/85 md:text-base"
               style={{ textShadow: "0 2px 10px rgba(0,0,0,0.15)" }}
             >
-              5 שדות, 30 שניות, ומסלול מלא ממתין לכם.
+              3 שדות, 20 שניות, ואופציות מותאמות לטיול יום בודד.
             </p>
           </div>
         </div>
@@ -177,9 +138,8 @@ export default function PlanTrip() {
 
       <main className="container mx-auto -mt-6 max-w-2xl space-y-5 px-4 pb-10">
         <Card className="space-y-6 border-white/40 bg-white/90 p-6 backdrop-blur-xl shadow-card">
-          {/* Region */}
           <div className="space-y-2">
-            <Label className="text-sm font-bold">אזור הטיול</Label>
+            <Label className="text-sm font-bold">אזור</Label>
             <Select value={region} onValueChange={setRegion} dir="rtl">
               <SelectTrigger className="bg-secondary/40">
                 <SelectValue />
@@ -194,67 +154,6 @@ export default function PlanTrip() {
             </Select>
           </div>
 
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="text-sm font-bold">תאריך התחלה</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start gap-2 bg-secondary/40 font-normal",
-                      !startDate && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                    {startDate ? fmt(startDate) : "בחר תאריך"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={(d) => d && setStartDate(d)}
-                    initialFocus
-                    locale={he}
-                    className="pointer-events-auto p-3"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-bold">תאריך סיום</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start gap-2 bg-secondary/40 font-normal",
-                      !endDate && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                    {endDate ? fmt(endDate) : "בחר תאריך"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={(d) => d && setEndDate(d)}
-                    initialFocus
-                    locale={he}
-                    disabled={(d) => (startDate ? d < startDate : false)}
-                    className="pointer-events-auto p-3"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          {/* Style chips — sunset accent */}
           <div className="space-y-2">
             <Label className="text-sm font-bold">סוג הטיול (ניתן לבחור כמה)</Label>
             <div className="flex flex-wrap gap-2">
@@ -279,7 +178,6 @@ export default function PlanTrip() {
             </div>
           </div>
 
-          {/* Group chips — teal primary */}
           <div className="space-y-2">
             <Label className="text-sm font-bold">הרכב</Label>
             <div className="flex flex-wrap gap-2">
@@ -303,27 +201,6 @@ export default function PlanTrip() {
               })}
             </div>
           </div>
-
-          {/* Pace */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-bold">קצב</Label>
-              <span className="text-xs font-semibold text-accent">
-                {pace <= 2 ? "רגוע" : pace >= 4 ? "אינטנסיבי" : "מאוזן"}
-              </span>
-            </div>
-            <Slider
-              value={[pace]}
-              min={1}
-              max={5}
-              step={1}
-              onValueChange={(v) => setPace(v[0])}
-            />
-            <div className="flex justify-between text-[11px] text-muted-foreground">
-              <span>רגוע</span>
-              <span>אינטנסיבי</span>
-            </div>
-          </div>
         </Card>
 
         <Button
@@ -335,12 +212,12 @@ export default function PlanTrip() {
           {loading ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              בונה מסלול חכם...
+              מחפש לכם אופציות...
             </>
           ) : (
             <>
               <Sparkles className="h-5 w-5" />
-              צור לי מסלול
+              הצג לי אופציות
               <ArrowLeft className="h-4 w-4" />
             </>
           )}
@@ -348,7 +225,7 @@ export default function PlanTrip() {
 
         {loading && (
           <p className="text-center text-xs text-muted-foreground">
-            ה-AI חוקר את האזור, בוחר תחנות אמיתיות ומוודא קואורדינטות. עד כדקה.
+            ה-AI חוקר את האזור ובוחר יעדים מתאימים. עד כדקה.
           </p>
         )}
       </main>
