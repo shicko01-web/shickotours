@@ -16,7 +16,8 @@ import { toast } from 'sonner';
 
 function formatDateRange(start: string, end: string) {
   try {
-    const s = new Date(start).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+    const s = new Date(start).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (start === end) return s;
     const e = new Date(end).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' });
     return `${s} — ${e}`;
   } catch {
@@ -193,12 +194,12 @@ function ShickoToursApp() {
               ) : (
                 <>
                   <Sun className="h-5 w-5 text-accent" />
-                  המסלול שלך
+                  {activeStops.length > 1 ? 'המסלול שלך' : 'היעד שלך'}
                 </>
               )}
             </h2>
             <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground">
-              {activeStops.length} תחנות
+              {activeStops.length === 1 ? 'יעד אחד' : `${activeStops.length} תחנות`}
             </span>
           </header>
           <div className="space-y-3">

@@ -26,9 +26,6 @@ export interface TripPlanParams {
   region: string;
   styles: string[];
   group: string;
-  pace: number;
-  startDate: string;
-  endDate: string;
 }
 
 export interface Trip {
@@ -48,4 +45,25 @@ export interface Trip {
   planParams?: TripPlanParams;
   stops: Stop[];
   planB: PlanBStop[];
+}
+
+/** A single-destination candidate suggested by the AI, before the user picks one. */
+export interface TripCandidate {
+  id: string;
+  name: string;
+  shortPitch: string;
+  overview: string;
+  highlights: string[];
+  tips: string[];
+  coords: Coordinates;
+  durationMin?: number;
+  category?: Stop['category'];
+}
+
+export interface CandidateBundle {
+  region: string;
+  regionLabel: string;
+  weatherCity: string;
+  planParams: TripPlanParams;
+  candidates: TripCandidate[];
 }
