@@ -7,11 +7,21 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+type Season = "spring" | "summer" | "autumn" | "winter";
+
 interface PlanInput {
   region: string;
   styles: string[];
   group: string;
+  season?: Season;
 }
+
+const SEASON_LABELS: Record<Season, string> = {
+  spring: "אביב (מרץ–מאי): פריחה, מזג אוויר נעים, ירק",
+  summer: "קיץ (יוני–אוגוסט): חם מאוד, להעדיף מים/צל/גובה/חופים, להימנע ממדבר בצהריים",
+  autumn: "סתיו (ספטמבר–נובמבר): מזג אוויר מתון, תחילת גשמים בצפון",
+  winter: "חורף (דצמבר–פברואר): גשם וקור בצפון/ירושלים, שלג אפשרי בחרמון, נחלים זורמים, מדבר וים המלח נוחים",
+};
 
 interface AICandidate {
   name: string;
