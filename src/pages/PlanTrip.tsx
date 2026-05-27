@@ -52,6 +52,21 @@ const GROUPS = [
   { value: "solo", label: "יחיד/ה" },
 ];
 
+const SEASONS = [
+  { value: "spring", label: "אביב" },
+  { value: "summer", label: "קיץ" },
+  { value: "autumn", label: "סתיו" },
+  { value: "winter", label: "חורף" },
+] as const;
+
+function currentSeason(): "spring" | "summer" | "autumn" | "winter" {
+  const m = new Date().getMonth() + 1;
+  if (m >= 3 && m <= 5) return "spring";
+  if (m >= 6 && m <= 8) return "summer";
+  if (m >= 9 && m <= 11) return "autumn";
+  return "winter";
+}
+
 const REGION_LABELS = Object.fromEntries(REGIONS.map((r) => [r.value, r.label]));
 
 export default function PlanTrip() {
