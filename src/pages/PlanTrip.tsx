@@ -52,6 +52,21 @@ const GROUPS = [
   { value: "solo", label: "יחיד/ה" },
 ];
 
+const SEASONS = [
+  { value: "spring", label: "אביב" },
+  { value: "summer", label: "קיץ" },
+  { value: "autumn", label: "סתיו" },
+  { value: "winter", label: "חורף" },
+] as const;
+
+function currentSeason(): "spring" | "summer" | "autumn" | "winter" {
+  const m = new Date().getMonth() + 1;
+  if (m >= 3 && m <= 5) return "spring";
+  if (m >= 6 && m <= 8) return "summer";
+  if (m >= 9 && m <= 11) return "autumn";
+  return "winter";
+}
+
 const REGION_LABELS = Object.fromEntries(REGIONS.map((r) => [r.value, r.label]));
 
 export default function PlanTrip() {
@@ -62,6 +77,9 @@ export default function PlanTrip() {
   const [region, setRegion] = useState(prev?.region ?? "galilee");
   const [styles, setStyles] = useState<string[]>(prev?.styles ?? ["nature", "views"]);
   const [group, setGroup] = useState(prev?.group ?? "family");
+  const [season, setSeason] = useState<"spring" | "summer" | "autumn" | "winter">(
+    prev?.season ?? currentSeason(),
+  );
   const [loading, setLoading] = useState(false);
 
   const toggleStyle = (val: string) => {
@@ -74,7 +92,7 @@ export default function PlanTrip() {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-trip", {
-        body: { region, styles, group },
+        body: { region, styles, group, season },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -196,6 +214,33 @@ export default function PlanTrip() {
                     )}
                   >
                     {g.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold">עונה בשנה</Label>
+            <p className="text-xs text-muted-foreground">
+              חשוב לתכנון מראש — ההמלצות יותאמו לעונה (פריחה, חום, גשם, שלכת).
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SEASONS.map((s) => {
+                const active = season === s.value;
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => setSeason(s.value)}
+                    className={cn(
+                      "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-smooth",
+                      active
+                        ? "border-rain bg-rain text-white shadow-soft"
+                        : "border-rain/40 bg-background text-rain hover:bg-rain/10",
+                    )}
+                  >
+                    {s.label}
                   </button>
                 );
               })}

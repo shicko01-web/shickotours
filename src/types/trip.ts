@@ -22,10 +22,13 @@ export interface PlanBStop extends Stop {
   isIndoor: boolean;
 }
 
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+
 export interface TripPlanParams {
   region: string;
   styles: string[];
   group: string;
+  season: Season;
 }
 
 export interface Trip {

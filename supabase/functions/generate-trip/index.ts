@@ -7,11 +7,21 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+type Season = "spring" | "summer" | "autumn" | "winter";
+
 interface PlanInput {
   region: string;
   styles: string[];
   group: string;
+  season?: Season;
 }
+
+const SEASON_LABELS: Record<Season, string> = {
+  spring: "אביב (מרץ–מאי): פריחה, מזג אוויר נעים, ירק",
+  summer: "קיץ (יוני–אוגוסט): חם מאוד, להעדיף מים/צל/גובה/חופים, להימנע ממדבר בצהריים",
+  autumn: "סתיו (ספטמבר–נובמבר): מזג אוויר מתון, תחילת גשמים בצפון",
+  winter: "חורף (דצמבר–פברואר): גשם וקור בצפון/ירושלים, שלג אפשרי בחרמון, נחלים זורמים, מדבר וים המלח נוחים",
+};
 
 interface AICandidate {
   name: string;
@@ -187,6 +197,9 @@ Deno.serve(async (req) => {
 
     const systemPrompt = `אתה מתכנן טיולים מומחה לישראל. אסור להציע מקומות מחוץ לאזור הגאוגרפי שביקש המשתמש. כל הטקסטים בעברית. החזר רק קריאה לפונקציה.`;
 
+    const season: Season = body.season ?? "spring";
+    const seasonHint = SEASON_LABELS[season];
+
     const userPrompt = `הצע 4 יעדים שונים לטיול יום בודד אך ורק באזור: **${hint.bbox}**.
 גבולות גאוגרפיים מחייבים: קווי רוחב ${hint.bounds[0]}–${hint.bounds[1]}, קווי אורך ${hint.bounds[2]}–${hint.bounds[3]}.
 דוגמאות למקומות מתאימים באזור: ${hint.examples.join(", ") || "—"}.
@@ -196,13 +209,14 @@ Deno.serve(async (req) => {
 קריטריונים:
 - סגנונות מועדפים: ${body.styles.join(", ") || "מגוון"}
 - הרכב: ${body.group}
+- **עונה מתוכננת לטיול: ${seasonHint}**. התאם את ההמלצות לעונה הזו: אל תציע יעדים שאינם מתאימים לעונה (למשל מסלולי מים בקיץ במדבר ללא צל, מסלולי גבישים בחורף בנגב כשגשם עלול לסכן, פריחה כשאין עונת פריחה וכו'). אם יש פריחה/נחל זורם/שלכת אופייניים לעונה — הדגש זאת.
 
 לכל יעד החזר:
 - name: שם מדויק של מקום אמיתי בתוך הגבולות.
-- shortPitch: משפט קצר אחד (עד 12 מילים) שמסביר למה כדאי לבחור בו.
-- overview: 50-80 מילים שמסבירות מה רואים, אווירה, רקע היסטורי/טבעי/נופי לפי הסגנון.
-- highlights: 3-4 דגשים קצרים (פרחים בעונה, נופים, סיפור היסטורי, אוכל מקומי).
-- tips: 2-4 טיפים פרקטיים לביקור.
+- shortPitch: משפט קצר אחד (עד 12 מילים) שמסביר למה כדאי לבחור בו **בעונה זו**.
+- overview: 50-80 מילים שמסבירות מה רואים, אווירה, רקע היסטורי/טבעי/נופי לפי הסגנון והעונה.
+- highlights: 3-4 דגשים קצרים תוך התייחסות לעונה (פרחים בעונה, נופים, סיפור היסטורי, אוכל מקומי).
+- tips: 2-4 טיפים פרקטיים לביקור (כולל לבוש/ציוד מתאים לעונה).
 - durationMin: כמה דקות צפוי לבלות במקום.
 - category: nature | food | culture | view | activity.
 - approxLat, approxLng: קואורדינטות אמיתיות בתוך הגבולות שצוינו.
@@ -328,7 +342,8 @@ Deno.serve(async (req) => {
         region: body.region,
         regionLabel: hint.label,
         weatherCity: hint.weatherCity,
-        planParams: { region: body.region, styles: body.styles, group: body.group },
+        planParams: { region: body.region, styles: body.styles, group: body.group, season },
+        season,
         candidates,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
