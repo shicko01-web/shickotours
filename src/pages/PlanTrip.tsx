@@ -219,6 +219,33 @@ export default function PlanTrip() {
               })}
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold">עונה בשנה</Label>
+            <p className="text-xs text-muted-foreground">
+              חשוב לתכנון מראש — ההמלצות יותאמו לעונה (פריחה, חום, גשם, שלכת).
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SEASONS.map((s) => {
+                const active = season === s.value;
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => setSeason(s.value)}
+                    className={cn(
+                      "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-smooth",
+                      active
+                        ? "border-rain bg-rain text-white shadow-soft"
+                        : "border-rain/40 bg-background text-rain hover:bg-rain/10",
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </Card>
 
         <Button
