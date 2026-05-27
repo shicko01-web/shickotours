@@ -92,7 +92,7 @@ export default function PlanTrip() {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-trip", {
-        body: { region, styles, group },
+        body: { region, styles, group, season },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
