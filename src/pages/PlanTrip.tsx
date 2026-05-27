@@ -77,6 +77,9 @@ export default function PlanTrip() {
   const [region, setRegion] = useState(prev?.region ?? "galilee");
   const [styles, setStyles] = useState<string[]>(prev?.styles ?? ["nature", "views"]);
   const [group, setGroup] = useState(prev?.group ?? "family");
+  const [season, setSeason] = useState<"spring" | "summer" | "autumn" | "winter">(
+    prev?.season ?? currentSeason(),
+  );
   const [loading, setLoading] = useState(false);
 
   const toggleStyle = (val: string) => {
