@@ -1,5 +1,6 @@
 # Roadmap
 
 - [x] Change date display format to DD/MM/YYYY across the app
-- [ ] Explain to the user how to share the app URL
+- [x] Explain to the user how to share the app URL
+
 
