@@ -1,5 +1,6 @@
 import type { Trip, Stop, PlanBStop } from '@/types/trip';
 import type { WeatherSnapshot } from '@/hooks/useWeather';
+import { formatDateIL } from '@/lib/utils';
 
 interface ExportOptions {
   trip: Trip;
@@ -80,7 +81,7 @@ export async function exportTripPdf({ trip, rainActive, weather, mapSnapshotUrl 
     <div class="header-card">
       <span class="plan-tag">${planLabel}</span>
       <h1>${escapeHtml(trip.name)}</h1>
-      <div class="sub">${escapeHtml(trip.startDate)} — ${escapeHtml(trip.endDate)} · ${weatherLine}</div>
+      <div class="sub">${formatDateIL(trip.startDate)} — ${formatDateIL(trip.endDate)} · ${weatherLine}</div>
     </div>
 
     ${mapSnapshotUrl ? `<img class="map-snap" src="${mapSnapshotUrl}" alt="Map" />` : ''}
@@ -90,7 +91,7 @@ export async function exportTripPdf({ trip, rainActive, weather, mapSnapshotUrl 
     }</h2>
     ${renderStops(stops, rainActive)}
 
-    <div class="footer">נוצר על ידי shickotours · ${new Date().toLocaleDateString('he-IL')}</div>
+    <div class="footer">נוצר על ידי shickotours · ${formatDateIL(new Date().toISOString().slice(0, 10))}</div>
   `;
 
   document.body.appendChild(container);
