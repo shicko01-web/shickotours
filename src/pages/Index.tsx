@@ -12,17 +12,13 @@ import { NearbyAttractions } from '@/components/NearbyAttractions';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { exportTripPdf } from '@/lib/pdfExport';
+import { formatDateIL } from '@/lib/utils';
 import { toast } from 'sonner';
 
 function formatDateRange(start: string, end: string) {
-  try {
-    const s = new Date(start).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' });
-    if (start === end) return s;
-    const e = new Date(end).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' });
-    return `${s} — ${e}`;
-  } catch {
-    return `${start} — ${end}`;
-  }
+  const s = formatDateIL(start);
+  if (start === end) return s;
+  return `${s} — ${formatDateIL(end)}`;
 }
 
 function ShickoToursApp() {
