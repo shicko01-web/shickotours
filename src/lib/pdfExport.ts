@@ -22,21 +22,54 @@ function renderStops(stops: (Stop | PlanBStop)[], rainActive: boolean) {
   return stops
     .map((s, i) => {
       const reason = (s as PlanBStop).reason;
+      const tips = s.tips?.length
+        ? `<ul class="tips">${s.tips.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
+        : '';
+      const details = s.details ? `<p class="details">${escapeHtml(s.details)}</p>` : '';
       return `
       <div class="stop">
         <div class="badge ${rainActive ? 'rain' : 'sun'}">${i + 1}</div>
         <div class="stop-body">
           <h3>${escapeHtml(s.name)}</h3>
           <p>${escapeHtml(s.description)}</p>
+          ${details}
+          ${tips}
           ${reason ? `<p class="reason"><strong>למה בגשם:</strong> ${escapeHtml(reason)}</p>` : ''}
           <p class="meta">
             ${s.durationMin ? `⏱ ${Math.round((s.durationMin / 60) * 10) / 10} שעות · ` : ''}
-            📍 ${s.coords.lat.toFixed(3)}, ${s.coords.lng.toFixed(3)}
+            📍 ${s.coords.lat.toFixed(4)}, ${s.coords.lng.toFixed(4)} ·
+            ניווט: google.com/maps?q=${s.coords.lat},${s.coords.lng}
           </p>
         </div>
       </div>`;
     })
     .join('');
+}
+
+/** Builds a static route map (markers + path) as a data URL, so html2canvas can embed it. */
+async function buildStaticMapDataUrl(stops: (Stop | PlanBStop)[]): Promise<string | null> {
+  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+  if (!key || stops.length === 0) return null;
+  const pts = stops.map((s) => `${s.coords.lat.toFixed(5)},${s.coords.lng.toFixed(5)}`);
+  const markers = stops
+    .map((s, i) => `markers=color:0x0891b2%7Clabel:${i + 1}%7C${pts[i]}`)
+    .join('&');
+  const path = pts.length > 1 ? `&path=color:0x0891b2cc%7Cweight:4%7C${pts.join('%7C')}` : '';
+  const center = pts.length === 1 ? `&center=${pts[0]}&zoom=14` : '';
+  const url = `https://maps.googleapis.com/maps/api/staticmap?size=640x360&scale=2&maptype=roadmap&language=he&${markers}${path}${center}&key=${key}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -53,6 +86,23 @@ export async function exportTripPdf({ trip, rainActive, weather, mapSnapshotUrl 
         weather.rainProbability * 100
       )}%`
     : 'אין נתוני מזג אוויר';
+
+  const mapUrl = mapSnapshotUrl ?? (await buildStaticMapDataUrl(stops));
+  const p = trip.planParams;
+  const seasonHe: Record<string, string> = {
+    spring: 'אביב',
+    summer: 'קיץ',
+    autumn: 'סתיו',
+    winter: 'חורף',
+  };
+  const paramsLine = p
+    ? [p.region, p.styles?.join(', '), p.group, seasonHe[p.season] ?? p.season]
+        .filter(Boolean)
+        .map((x) => escapeHtml(String(x)))
+        .join(' · ')
+    : '';
+
+
 
   const container = document.createElement('div');
   container.dir = 'rtl';
@@ -75,6 +125,13 @@ export async function exportTripPdf({ trip, rainActive, weather, mapSnapshotUrl 
       .stop p { margin:0 0 4px; font-size:12px; color:#475569; line-height:1.5; }
       .reason { background:#dbeafe; color:#1e40af; padding:6px 8px; border-radius:6px; }
       .meta { color:#94a3b8 !important; font-size:11px !important; }
+      .details { color:#334155 !important; }
+      .tips { margin:4px 18px 6px 0; padding:0; font-size:12px; color:#475569; line-height:1.6; }
+      .section { border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:14px; page-break-inside: avoid; }
+      .section h2 { font-size:15px; margin:0 0 6px; color:#0e7490; }
+      .section p { font-size:12.5px; color:#334155; line-height:1.7; margin:0 0 6px; }
+      .section ul { margin:4px 18px 0 0; padding:0; font-size:12.5px; color:#334155; line-height:1.7; }
+      .params { font-size:11px; color:#64748b; }
       .footer { margin-top:20px; text-align:center; font-size:11px; color:#94a3b8; }
     </style>
 
@@ -84,12 +141,34 @@ export async function exportTripPdf({ trip, rainActive, weather, mapSnapshotUrl 
       <div class="sub">${formatDateIL(trip.startDate)} — ${formatDateIL(trip.endDate)} · ${weatherLine}</div>
     </div>
 
-    ${mapSnapshotUrl ? `<img class="map-snap" src="${mapSnapshotUrl}" alt="Map" />` : ''}
+    ${paramsLine ? `<div class="params">פרטי החיפוש: ${paramsLine}</div>` : ''}
+
+    ${mapUrl ? `<img class="map-snap" src="${mapUrl}" alt="מפת המסלול" />` : ''}
+
+    ${
+      trip.overview
+        ? `<div class="section"><h2>על המסלול</h2><p>${escapeHtml(trip.overview)}</p></div>`
+        : ''
+    }
+
+    ${
+      trip.highlights?.length
+        ? `<div class="section"><h2>דגשים ונקודות עניין</h2><ul>${trip.highlights
+            .map((h) => `<li>${escapeHtml(h)}</li>`)
+            .join('')}</ul></div>`
+        : ''
+    }
 
     <h2 style="font-size:16px; margin: 8px 0 12px; color:#0f172a;">${
       rainActive ? '🌧 תחנות תוכנית B' : '☀️ תחנות המסלול'
     }</h2>
     ${renderStops(stops, rainActive)}
+
+    <div class="section"><h2>מקורות מידע מומלצים</h2><ul>
+      <li>טיולי — tiuli.com</li>
+      <li>קק"ל — kkl.org.il</li>
+      <li>רשות הטבע והגנים — parks.org.il</li>
+    </ul></div>
 
     <div class="footer">נוצר על ידי shickotours · ${formatDateIL(new Date().toISOString().slice(0, 10))}</div>
   `;
