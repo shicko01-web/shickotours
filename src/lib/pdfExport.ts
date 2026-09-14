@@ -22,21 +22,54 @@ function renderStops(stops: (Stop | PlanBStop)[], rainActive: boolean) {
   return stops
     .map((s, i) => {
       const reason = (s as PlanBStop).reason;
+      const tips = s.tips?.length
+        ? `<ul class="tips">${s.tips.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
+        : '';
+      const details = s.details ? `<p class="details">${escapeHtml(s.details)}</p>` : '';
       return `
       <div class="stop">
         <div class="badge ${rainActive ? 'rain' : 'sun'}">${i + 1}</div>
         <div class="stop-body">
           <h3>${escapeHtml(s.name)}</h3>
           <p>${escapeHtml(s.description)}</p>
+          ${details}
+          ${tips}
           ${reason ? `<p class="reason"><strong>למה בגשם:</strong> ${escapeHtml(reason)}</p>` : ''}
           <p class="meta">
             ${s.durationMin ? `⏱ ${Math.round((s.durationMin / 60) * 10) / 10} שעות · ` : ''}
-            📍 ${s.coords.lat.toFixed(3)}, ${s.coords.lng.toFixed(3)}
+            📍 ${s.coords.lat.toFixed(4)}, ${s.coords.lng.toFixed(4)} ·
+            ניווט: google.com/maps?q=${s.coords.lat},${s.coords.lng}
           </p>
         </div>
       </div>`;
     })
     .join('');
+}
+
+/** Builds a static route map (markers + path) as a data URL, so html2canvas can embed it. */
+async function buildStaticMapDataUrl(stops: (Stop | PlanBStop)[]): Promise<string | null> {
+  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+  if (!key || stops.length === 0) return null;
+  const pts = stops.map((s) => `${s.coords.lat.toFixed(5)},${s.coords.lng.toFixed(5)}`);
+  const markers = stops
+    .map((s, i) => `markers=color:0x0891b2%7Clabel:${i + 1}%7C${pts[i]}`)
+    .join('&');
+  const path = pts.length > 1 ? `&path=color:0x0891b2cc%7Cweight:4%7C${pts.join('%7C')}` : '';
+  const center = pts.length === 1 ? `&center=${pts[0]}&zoom=14` : '';
+  const url = `https://maps.googleapis.com/maps/api/staticmap?size=640x360&scale=2&maptype=roadmap&language=he&${markers}${path}${center}&key=${key}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 /**
