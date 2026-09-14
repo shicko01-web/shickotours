@@ -125,6 +125,13 @@ export async function exportTripPdf({ trip, rainActive, weather, mapSnapshotUrl 
       .stop p { margin:0 0 4px; font-size:12px; color:#475569; line-height:1.5; }
       .reason { background:#dbeafe; color:#1e40af; padding:6px 8px; border-radius:6px; }
       .meta { color:#94a3b8 !important; font-size:11px !important; }
+      .details { color:#334155 !important; }
+      .tips { margin:4px 18px 6px 0; padding:0; font-size:12px; color:#475569; line-height:1.6; }
+      .section { border:1px solid #e2e8f0; border-radius:12px; padding:14px; margin-bottom:14px; page-break-inside: avoid; }
+      .section h2 { font-size:15px; margin:0 0 6px; color:#0e7490; }
+      .section p { font-size:12.5px; color:#334155; line-height:1.7; margin:0 0 6px; }
+      .section ul { margin:4px 18px 0 0; padding:0; font-size:12.5px; color:#334155; line-height:1.7; }
+      .params { font-size:11px; color:#64748b; }
       .footer { margin-top:20px; text-align:center; font-size:11px; color:#94a3b8; }
     </style>
 
@@ -134,12 +141,34 @@ export async function exportTripPdf({ trip, rainActive, weather, mapSnapshotUrl 
       <div class="sub">${formatDateIL(trip.startDate)} — ${formatDateIL(trip.endDate)} · ${weatherLine}</div>
     </div>
 
-    ${mapSnapshotUrl ? `<img class="map-snap" src="${mapSnapshotUrl}" alt="Map" />` : ''}
+    ${paramsLine ? `<div class="params">פרטי החיפוש: ${paramsLine}</div>` : ''}
+
+    ${mapUrl ? `<img class="map-snap" src="${mapUrl}" alt="מפת המסלול" />` : ''}
+
+    ${
+      trip.overview
+        ? `<div class="section"><h2>על המסלול</h2><p>${escapeHtml(trip.overview)}</p></div>`
+        : ''
+    }
+
+    ${
+      trip.highlights?.length
+        ? `<div class="section"><h2>דגשים ונקודות עניין</h2><ul>${trip.highlights
+            .map((h) => `<li>${escapeHtml(h)}</li>`)
+            .join('')}</ul></div>`
+        : ''
+    }
 
     <h2 style="font-size:16px; margin: 8px 0 12px; color:#0f172a;">${
       rainActive ? '🌧 תחנות תוכנית B' : '☀️ תחנות המסלול'
     }</h2>
     ${renderStops(stops, rainActive)}
+
+    <div class="section"><h2>מקורות מידע מומלצים</h2><ul>
+      <li>טיולי — tiuli.com</li>
+      <li>קק"ל — kkl.org.il</li>
+      <li>רשות הטבע והגנים — parks.org.il</li>
+    </ul></div>
 
     <div class="footer">נוצר על ידי shickotours · ${formatDateIL(new Date().toISOString().slice(0, 10))}</div>
   `;
