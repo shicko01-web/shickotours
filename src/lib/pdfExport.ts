@@ -87,6 +87,23 @@ export async function exportTripPdf({ trip, rainActive, weather, mapSnapshotUrl 
       )}%`
     : 'אין נתוני מזג אוויר';
 
+  const mapUrl = mapSnapshotUrl ?? (await buildStaticMapDataUrl(stops));
+  const p = trip.planParams;
+  const seasonHe: Record<string, string> = {
+    spring: 'אביב',
+    summer: 'קיץ',
+    autumn: 'סתיו',
+    winter: 'חורף',
+  };
+  const paramsLine = p
+    ? [p.region, p.styles?.join(', '), p.group, seasonHe[p.season] ?? p.season]
+        .filter(Boolean)
+        .map((x) => escapeHtml(String(x)))
+        .join(' · ')
+    : '';
+
+
+
   const container = document.createElement('div');
   container.dir = 'rtl';
   container.lang = 'he';
