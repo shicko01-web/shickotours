@@ -163,8 +163,17 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="pb-8 pt-6 text-center text-xs text-muted-foreground">
-        shickotours · נוצר באהבה לטיולים בארץ 🧭
+      <footer className="space-y-2 pb-8 pt-6 text-center text-xs text-muted-foreground">
+        <p>shickotours · נוצר באהבה לטיולים בארץ 🧭</p>
+        <p>
+          הצעות ומשוב:{' '}
+          <a
+            href="mailto:shicko01@gmail.com"
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+          >
+            shicko01@gmail.com
+          </a>
+        </p>
       </footer>
     </div>
   );
